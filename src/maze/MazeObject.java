@@ -16,8 +16,9 @@ public abstract class MazeObject
 		this.colour = Color.BLACK;
 	}
 	
-	public void Draw(int width, int height, Graphics gl)
+	public void draw(int width, int height, Graphics gl)
 	{
-		gl.fillRect(this.position.x, this.position.y, width, height);
+		gl.setColor(this.colour);
+		gl.fillRect(this.position.x * width, this.position.y * height, width, height);
 	}
 }
