@@ -30,6 +30,11 @@ public class Vector2I
 		return new Vector2I(-this.x, -this.y);
 	}
 	
+	public int magnitude()
+	{
+		return (int) Math.round(Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2)));
+	}
+	
 	@Override
 	public int hashCode()
 	{

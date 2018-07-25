@@ -1,12 +1,13 @@
 package maze;
 
+import java.util.Collection;
+
 import utility.ColourConsts;
 import utility.MoveDirection;
 import utility.Vector2I;
 
 public class MazePlayer extends MazeObject
 {
-
 	public MazePlayer(Vector2I position)
 	{
 		super(position);
@@ -15,17 +16,37 @@ public class MazePlayer extends MazeObject
 	
 	public boolean canMove(Maze maze, MoveDirection direction)
 	{
+		if(maze == null)
+			return false;
 		Vector2I after = this.position.add(direction.unit());
-		return !Maze.isWall(maze.at(after));
+		Collection<MazeObject> objects = maze.at(after);
+		if(objects == null || objects.isEmpty())
+			return true;
+		for(MazeObject objects_at : maze.at(after))
+			if(Maze.isWall(objects_at))
+				return false;
+		return true;
 	}
 	
 	public void moveIfCan(Maze maze, MoveDirection direction)
 	{
 		if(this.canMove(maze, direction))
 		{
+			Vector2I previous_position = this.position;
 			this.position = this.position.add(direction.unit());
-			maze.checkPlayerState();
+			maze.checkPlayerStates();
+			maze.relocate(this, previous_position);
 		}
+	}
+	
+	public int bestDistanceFromExit(Maze maze)
+	{
+		int minimum_length = Integer.MAX_VALUE;
+		for(MazeExit exit : maze.getExits())
+		{
+			minimum_length = Math.min(minimum_length, exit.position.subtract(this.position).magnitude());
+		}
+		return minimum_length;
 	}
 
 }

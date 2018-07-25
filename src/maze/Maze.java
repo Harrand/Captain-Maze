@@ -6,12 +6,14 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
 
+import ai.MazeAIPlayer;
 import utility.ColourConsts;
 import utility.MoveDirection;
 import utility.Vector2I;
@@ -20,10 +22,10 @@ public class Maze
 {
 	private BufferedImage maze_image;
 	private int width, height;
-	private Map<Vector2I, MazeObject> maze_map;
+	private Map<Vector2I, Collection<MazeObject>> maze_map;
 	private List<MazeEntrance> maze_entrances;
 	private List<MazeExit> maze_exits;
-	private MazePlayer maze_player;
+	private List<MazePlayer> maze_players;
 	
 	public Maze(File maze_image_file)
 	{
@@ -36,12 +38,45 @@ public class Maze
 			e.printStackTrace();
 		}
 		// Check through the pixels and check for the right colours.
-		this.maze_map = new HashMap<Vector2I, MazeObject>();
+		this.maze_map = new HashMap<Vector2I, Collection<MazeObject>>();
 		this.maze_entrances = new ArrayList<MazeEntrance>();
 		this.maze_exits = new ArrayList<MazeExit>();
+		this.maze_players = new ArrayList<MazePlayer>();
 		
 		int[][] pixels = this.updatePixelData();
 		this.populateMazeMap(pixels);
+	}
+	
+	public final Collection<MazeEntrance> getEntrances()
+	{
+		return this.maze_entrances;
+	}
+	
+	public final Collection<MazeExit> getExits()
+	{
+		return this.maze_exits;
+	}
+	
+	public final Collection<MazePlayer> getPlayers()
+	{
+		return this.maze_players;
+	}
+	
+	public final MazeHumanPlayer getHumanPlayer()
+	{
+		for(MazePlayer player : this.getPlayers())
+			if(player instanceof MazeHumanPlayer)
+				return (MazeHumanPlayer) player;
+		return null;
+	}
+	
+	public final Collection<MazeAIPlayer> getAIPlayers()
+	{
+		List<MazeAIPlayer> ai_players = new ArrayList<MazeAIPlayer>();
+		for(MazePlayer player : this.getPlayers())
+			if(player instanceof MazeAIPlayer)
+				ai_players.add((MazeAIPlayer) player);
+		return ai_players;
 	}
 	
 	private int[][] updatePixelData()
@@ -92,16 +127,35 @@ public class Maze
 				else
 					continue;
 				// Add the object to the map.
-				this.maze_map.put(position, to_emplace);
+				this.addMazeObject(to_emplace);
 			}
 		}
 		return true;
 	}
 	
-	public final MazeObject at(Vector2I position)
+	public final Collection<MazeObject> at(Vector2I position)
 	{
-		MazeObject object = this.maze_map.get(position);
-		return object;
+		return this.maze_map.get(position);
+	}
+	
+	private void removeObjectAt(Vector2I position, MazeObject object)
+	{
+		Collection<MazeObject> at = this.at(position);
+		if(at != null)
+			at.remove(object);
+	}
+	
+	private void addMazeObject(MazeObject object)
+	{
+		Vector2I position = object.position;
+		Collection<MazeObject> objects = this.maze_map.get(position);
+		if(objects == null)
+		{
+			// need to add the new collection.
+			objects = new ArrayList<MazeObject>();
+			this.maze_map.put(position, objects);
+		}
+		objects.add(object);
 	}
 	
 	public void draw(Vector2I viewport_dimensions, Graphics gl)
@@ -109,66 +163,87 @@ public class Maze
 		// We need to calculate how many pixels each texel of the Maze should take up.
 		// texel size = viewport-width / texels-per-row
 		Vector2I texel_size = new Vector2I(viewport_dimensions.x / this.width, viewport_dimensions.y / this.height);
-		for(MazeObject object : this.maze_map.values())
-			object.draw(texel_size.x, texel_size.y, gl);
+		for(Collection<MazeObject> objects : this.maze_map.values())
+			for(MazeObject object : objects)
+				object.draw(texel_size.x, texel_size.y, gl);
 	}
 	
-	public void respawnPlayer(int entrance_id)
+	public MazePlayer spawnPlayer(int player_id, int entrance_id, MazePlayerType type)
 	{
-		boolean found = false;
-		for(MazeObject object : this.maze_map.values())
+		MazePlayer new_player = null;
+		switch(type)
 		{
-			if(object instanceof MazePlayer)
-			{
-				this.maze_player = (MazePlayer) object;
-				found = true;
-			}
+		case HUMAN:
+			new_player = new MazeHumanPlayer(Vector2I.NAN, this);
+			break;
+		case AI:
+			new_player = new MazeAIPlayer(Vector2I.NAN, this);
+			break;
 		}
-		if(!found)
-		{
-			// wasn't found, create the player and add it to the map.
-			this.maze_player = new MazeHumanPlayer(Vector2I.NAN, this);
-			this.maze_map.put(this.maze_player.position, this.maze_player);
-		}
+		// set the new player position.
 		try
 		{
-		this.maze_player.position = this.maze_entrances.get(entrance_id).position;
-		}catch(IndexOutOfBoundsException exception){}
+			new_player.position = this.maze_entrances.get(entrance_id).position;
+		}catch(Exception e) {new_player.position = Vector2I.ZERO;}
+		
+		if(this.maze_players.size() <= player_id)
+		{
+			// we need to add it as a new player.
+			this.maze_players.add(new_player);
+			this.addMazeObject(new_player);
+		}
+		else
+		{
+			// edit the existing player at that index.
+			this.maze_players.set(player_id, new_player);
+		}
+		return new_player;
+	}
+	
+	public void relocate(MazeObject object, Vector2I previous_position)
+	{
+		this.removeObjectAt(previous_position, object);
+		this.addMazeObject(object);
 	}
 	
 	public void onKeyPress(char c)
 	{
-		if(this.maze_player != null && this.maze_player instanceof MazeHumanPlayer)
+		MazeHumanPlayer human = null;
+		for(MazePlayer player : this.maze_players)
+			if(player instanceof MazeHumanPlayer)
+				human = (MazeHumanPlayer) player;
+		if(human == null)
+			return;
+		switch(c)
 		{
-			switch(c)
-			{
-			case 'W':
-				this.maze_player.moveIfCan(this, MoveDirection.UP);
-				break;
-			case 'A':
-				this.maze_player.moveIfCan(this, MoveDirection.LEFT);
-				break;
-			case 'S':
-				this.maze_player.moveIfCan(this, MoveDirection.DOWN);
-				break;
-			case 'D':
-				this.maze_player.moveIfCan(this, MoveDirection.RIGHT);
-				break;
-			}
+		case 'W':
+			human.moveIfCan(this, MoveDirection.UP);
+			break;
+		case 'A':
+			human.moveIfCan(this, MoveDirection.LEFT);
+			break;
+		case 'S':
+			human.moveIfCan(this, MoveDirection.DOWN);
+			break;
+		case 'D':
+			human.moveIfCan(this, MoveDirection.RIGHT);
+			break;
 		}
 	}
 	
-	public void checkPlayerState()
+	public void checkPlayerStates()
 	{
-		for(MazeExit exit : this.maze_exits)
-			if(this.maze_player.position.equals(exit.position))
-				this.onPlayerReachExit();
+		for(MazePlayer player : this.maze_players)
+			for(MazeExit exit : this.maze_exits)
+				if(player.position.equals(exit.position))
+					this.onPlayerReachExit(player);
 	}
 	
-	public void onPlayerReachExit()
+	public void onPlayerReachExit(MazePlayer player)
 	{
-		System.out.println("Player reached exit! Again!");
-		this.respawnPlayer(0);
+		Vector2I previous_position = player.position;
+		player.position = this.getEntrances().iterator().next().position;
+		this.relocate(player, previous_position);
 	}
 	
 	public static boolean isEmpty(MazeObject object)

@@ -4,35 +4,40 @@ import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
+import java.util.Timer;
 
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 
+import ai.AIUpdateFunctor;
 import maze.Maze;
+import maze.MazePlayerType;
 import utility.Vector2I;
 
 @SuppressWarnings("serial")
-public class MazeGame extends JFrame implements KeyListener
+public class MazeGame extends JPanel implements KeyListener
 {
 	private Maze maze;
 	
 	public MazeGame(String file_path)
 	{
-		super("Maze Game");
 		this.setVisible(true);
 		this.setSize(800, 600);
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		this.addKeyListener(this);
 		
 		File file = new File(file_path);
 		this.maze = new Maze(file);
-		this.maze.respawnPlayer(0);
+		this.maze.spawnPlayer(0, 0, MazePlayerType.HUMAN);
+		this.maze.spawnPlayer(1, 0, MazePlayerType.AI);
 		this.repaint();
+		
+		Timer timer = new Timer();
+		timer.schedule(new AIUpdateFunctor(this.maze, this), 0, 1000);
 	}
 	
 	@Override
-	public void paint(Graphics gl)
+	public void paintComponent(Graphics gl)
 	{
-		super.paint(gl);
+		super.paintComponent(gl);
 		if(this.maze == null)
 			return;
 		this.maze.draw(new Vector2I(this.getWidth(), this.getHeight()), gl);
@@ -41,7 +46,13 @@ public class MazeGame extends JFrame implements KeyListener
 	public static void main(String[] args)
 	{
 		//new MazeGame(args[0]);
-		new MazeGame("C:/Users/Harry/eclipse-workspace/Captain Maze/maze.png");
+		JFrame window = new JFrame("Maze Game");
+		window.setSize(800, 600);
+		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		window.setVisible(true);
+		MazeGame game = new MazeGame("C:/Users/Harry/eclipse-workspace/Captain Maze/maze.png");
+		window.add(game);
+		window.addKeyListener(game);
 	}
 
 	@Override

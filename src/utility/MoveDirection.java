@@ -2,7 +2,7 @@ package utility;
 
 public enum MoveDirection
 {
-	UP, DOWN, LEFT, RIGHT;
+	UP, DOWN, LEFT, RIGHT, STILL;
 	
 	public Vector2I unit()
 	{
