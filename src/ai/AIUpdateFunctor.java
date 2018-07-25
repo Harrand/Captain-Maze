@@ -20,9 +20,8 @@ public class AIUpdateFunctor extends TimerTask
 	@Override
 	public void run()
 	{
-		System.out.println("AI MUST DO SOMETHING NOW");
 		for(MazeAIPlayer player : this.maze.getAIPlayers())
-			player.makeDecision(this.repainter);
+				player.makeDecision(this.repainter);
 	}
 
 }

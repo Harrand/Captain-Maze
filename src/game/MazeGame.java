@@ -19,10 +19,10 @@ public class MazeGame extends JPanel implements KeyListener
 {
 	private Maze maze;
 	
-	public MazeGame(String file_path)
+	public MazeGame(String file_path, int width, int height)
 	{
 		this.setVisible(true);
-		this.setSize(800, 600);
+		this.setSize(width, height);
 		
 		File file = new File(file_path);
 		this.maze = new Maze(file);
@@ -31,7 +31,7 @@ public class MazeGame extends JPanel implements KeyListener
 		this.repaint();
 		
 		Timer timer = new Timer();
-		timer.schedule(new AIUpdateFunctor(this.maze, this), 0, 1000);
+		timer.schedule(new AIUpdateFunctor(this.maze, this), 0, 1);
 	}
 	
 	@Override
@@ -47,10 +47,11 @@ public class MazeGame extends JPanel implements KeyListener
 	{
 		//new MazeGame(args[0]);
 		JFrame window = new JFrame("Maze Game");
-		window.setSize(800, 600);
+		int width = 500, height = 500;
+		window.setSize(width, height);
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		window.setVisible(true);
-		MazeGame game = new MazeGame("C:/Users/Harry/eclipse-workspace/Captain Maze/maze.png");
+		MazeGame game = new MazeGame("C:/Users/Harry/eclipse-workspace/Captain Maze/maze0.png", width, height);
 		window.add(game);
 		window.addKeyListener(game);
 	}
@@ -64,7 +65,7 @@ public class MazeGame extends JPanel implements KeyListener
 	@Override
 	public void keyTyped(KeyEvent e)
 	{
-		this.maze.onKeyPress(Character.toUpperCase(e.getKeyChar()));
+		this.maze.onKeyPress(Character.toUpperCase(e.getKeyChar()), this);
 		this.repaint();
 	}
 }

@@ -12,20 +12,25 @@ import java.util.List;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
+import javax.swing.JComponent;
 
 import ai.MazeAIPlayer;
+import ai.GeneticAlgorithm;
 import utility.ColourConsts;
 import utility.MoveDirection;
+import utility.SpecialisedMaths;
 import utility.Vector2I;
 
 public class Maze
 {
 	private BufferedImage maze_image;
 	private int width, height;
+	public boolean drawing;
 	private Map<Vector2I, Collection<MazeObject>> maze_map;
 	private List<MazeEntrance> maze_entrances;
 	private List<MazeExit> maze_exits;
 	private List<MazePlayer> maze_players;
+	private GeneticAlgorithm neural_evolution;
 	
 	public Maze(File maze_image_file)
 	{
@@ -44,7 +49,19 @@ public class Maze
 		this.maze_players = new ArrayList<MazePlayer>();
 		
 		int[][] pixels = this.updatePixelData();
+		this.drawing = false;
 		this.populateMazeMap(pixels);
+		this.neural_evolution = new GeneticAlgorithm();
+	}
+	
+	public int getWidth()
+	{
+		return this.width;
+	}
+	
+	public int getHeight()
+	{
+		return this.height;
 	}
 	
 	public final Collection<MazeEntrance> getEntrances()
@@ -77,6 +94,11 @@ public class Maze
 			if(player instanceof MazeAIPlayer)
 				ai_players.add((MazeAIPlayer) player);
 		return ai_players;
+	}
+	
+	public final GeneticAlgorithm getGeneticAlgorithm()
+	{
+		return this.neural_evolution;
 	}
 	
 	private int[][] updatePixelData()
@@ -163,9 +185,11 @@ public class Maze
 		// We need to calculate how many pixels each texel of the Maze should take up.
 		// texel size = viewport-width / texels-per-row
 		Vector2I texel_size = new Vector2I(viewport_dimensions.x / this.width, viewport_dimensions.y / this.height);
+		this.drawing = true;
 		for(Collection<MazeObject> objects : this.maze_map.values())
 			for(MazeObject object : objects)
 				object.draw(texel_size.x, texel_size.y, gl);
+		this.drawing = false;
 	}
 	
 	public MazePlayer spawnPlayer(int player_id, int entrance_id, MazePlayerType type)
@@ -177,7 +201,7 @@ public class Maze
 			new_player = new MazeHumanPlayer(Vector2I.NAN, this);
 			break;
 		case AI:
-			new_player = new MazeAIPlayer(Vector2I.NAN, this);
+			new_player = new MazeAIPlayer(Vector2I.NAN, this, this.neural_evolution.getNewStrategy());
 			break;
 		}
 		// set the new player position.
@@ -206,7 +230,7 @@ public class Maze
 		this.addMazeObject(object);
 	}
 	
-	public void onKeyPress(char c)
+	public void onKeyPress(char c, JComponent repainter)
 	{
 		MazeHumanPlayer human = null;
 		for(MazePlayer player : this.maze_players)
@@ -217,26 +241,82 @@ public class Maze
 		switch(c)
 		{
 		case 'W':
-			human.moveIfCan(this, MoveDirection.UP);
+			human.moveIfCan(this, MoveDirection.UP, repainter);
 			break;
 		case 'A':
-			human.moveIfCan(this, MoveDirection.LEFT);
+			human.moveIfCan(this, MoveDirection.LEFT, repainter);
 			break;
 		case 'S':
-			human.moveIfCan(this, MoveDirection.DOWN);
+			human.moveIfCan(this, MoveDirection.DOWN, repainter);
 			break;
 		case 'D':
-			human.moveIfCan(this, MoveDirection.RIGHT);
+			human.moveIfCan(this, MoveDirection.RIGHT, repainter);
 			break;
 		}
 	}
 	
-	public void checkPlayerStates()
+	public void checkPlayerStates(JComponent repainter)
 	{
 		for(MazePlayer player : this.maze_players)
 			for(MazeExit exit : this.maze_exits)
 				if(player.position.equals(exit.position))
 					this.onPlayerReachExit(player);
+		boolean ai_players_done = true;
+		for(MazeAIPlayer ai_player : this.getAIPlayers())
+		{
+			if(ai_player.getStrategy().finished())
+				this.onAIPlayerFinish(ai_player, repainter);
+			else
+				ai_players_done = false;
+		}
+		if(ai_players_done)
+		{
+			this.neural_evolution.nextGeneration();
+			this.createNextGenome(repainter);
+		}
+	}
+	
+	public void onAIPlayerFinish(MazeAIPlayer player, JComponent repainter)
+	{
+		boolean found_exit = false;
+		for(MazeExit exit : this.maze_exits)
+			if(player.position == exit.position)
+				found_exit = true;
+		if(!found_exit)
+		{
+			this.maze_players.remove(player);
+			this.neural_evolution.rateStrategy(player.getStrategy(), player.fitness());
+			repainter.repaint();
+			System.out.println("AI Player Exhausted, fitness = " + player.fitness());
+		}
+		else
+			System.out.println("AI Player reached the end! Finished at generation " + this.neural_evolution.getGeneration());
+	}
+	
+	private void deleteAIPlayers()
+	{
+		for(MazePlayer player : this.maze_players)
+		{
+			if(player instanceof MazeAIPlayer)
+			{
+				this.maze_players.remove(player);
+				this.removeObjectAt(player.position, player);
+			}
+		}
+	}
+	
+	private void createAIPlayers(int quantity)
+	{
+		for(int i = 0; i < quantity; i++)
+			this.spawnPlayer(this.maze_players.size(), 0, MazePlayerType.AI);
+		System.out.println("First strategy: " + ((MazeAIPlayer)this.maze_players.get(this.maze_players.size() - quantity)).getStrategy());
+	}
+	
+	private void createNextGenome(JComponent repainter)
+	{
+		this.deleteAIPlayers();
+		repainter.repaint();
+		this.createAIPlayers(5);
 	}
 	
 	public void onPlayerReachExit(MazePlayer player)

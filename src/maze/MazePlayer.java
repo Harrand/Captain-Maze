@@ -2,6 +2,8 @@ package maze;
 
 import java.util.Collection;
 
+import javax.swing.JComponent;
+
 import utility.ColourConsts;
 import utility.MoveDirection;
 import utility.Vector2I;
@@ -28,13 +30,13 @@ public class MazePlayer extends MazeObject
 		return true;
 	}
 	
-	public void moveIfCan(Maze maze, MoveDirection direction)
+	public void moveIfCan(Maze maze, MoveDirection direction, JComponent repainter)
 	{
-		if(this.canMove(maze, direction))
+		if(this.canMove(maze, direction) && !maze.drawing)
 		{
 			Vector2I previous_position = this.position;
 			this.position = this.position.add(direction.unit());
-			maze.checkPlayerStates();
+			maze.checkPlayerStates(repainter);
 			maze.relocate(this, previous_position);
 		}
 	}
@@ -44,7 +46,7 @@ public class MazePlayer extends MazeObject
 		int minimum_length = Integer.MAX_VALUE;
 		for(MazeExit exit : maze.getExits())
 		{
-			minimum_length = Math.min(minimum_length, exit.position.subtract(this.position).magnitude());
+			minimum_length = (int) Math.min(minimum_length, exit.position.subtract(this.position).magnitude());
 		}
 		return minimum_length;
 	}
