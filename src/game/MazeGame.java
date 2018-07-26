@@ -31,7 +31,7 @@ public class MazeGame extends JPanel implements KeyListener
 		this.repaint();
 		
 		Timer timer = new Timer();
-		timer.schedule(new AIUpdateFunctor(this.maze, this), 0, 1);
+		timer.schedule(new AIUpdateFunctor(this.maze, this), 0, 5);
 	}
 	
 	@Override

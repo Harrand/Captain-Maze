@@ -18,14 +18,12 @@ import ai.MazeAIPlayer;
 import ai.GeneticAlgorithm;
 import utility.ColourConsts;
 import utility.MoveDirection;
-import utility.SpecialisedMaths;
 import utility.Vector2I;
 
 public class Maze
 {
 	private BufferedImage maze_image;
 	private int width, height;
-	public boolean drawing;
 	private Map<Vector2I, Collection<MazeObject>> maze_map;
 	private List<MazeEntrance> maze_entrances;
 	private List<MazeExit> maze_exits;
@@ -49,9 +47,8 @@ public class Maze
 		this.maze_players = new ArrayList<MazePlayer>();
 		
 		int[][] pixels = this.updatePixelData();
-		this.drawing = false;
 		this.populateMazeMap(pixels);
-		this.neural_evolution = new GeneticAlgorithm();
+		this.neural_evolution = new GeneticAlgorithm(20);
 	}
 	
 	public int getWidth()
@@ -185,11 +182,13 @@ public class Maze
 		// We need to calculate how many pixels each texel of the Maze should take up.
 		// texel size = viewport-width / texels-per-row
 		Vector2I texel_size = new Vector2I(viewport_dimensions.x / this.width, viewport_dimensions.y / this.height);
-		this.drawing = true;
-		for(Collection<MazeObject> objects : this.maze_map.values())
-			for(MazeObject object : objects)
+		Collection<Collection<MazeObject>> collection_collection = new ArrayList<Collection<MazeObject>>(this.maze_map.values());
+		for(Collection<MazeObject> objects : collection_collection)
+		{
+			Collection<MazeObject> objects_copy = new ArrayList<MazeObject>(objects);
+			for(MazeObject object : objects_copy)
 				object.draw(texel_size.x, texel_size.y, gl);
-		this.drawing = false;
+		}
 	}
 	
 	public MazePlayer spawnPlayer(int player_id, int entrance_id, MazePlayerType type)
@@ -280,14 +279,13 @@ public class Maze
 	{
 		boolean found_exit = false;
 		for(MazeExit exit : this.maze_exits)
-			if(player.position == exit.position)
+			if(player.position.subtract(exit.position).magnitude() <= 1.0f)
 				found_exit = true;
 		if(!found_exit)
 		{
 			this.maze_players.remove(player);
 			this.neural_evolution.rateStrategy(player.getStrategy(), player.fitness());
 			repainter.repaint();
-			System.out.println("AI Player Exhausted, fitness = " + player.fitness());
 		}
 		else
 			System.out.println("AI Player reached the end! Finished at generation " + this.neural_evolution.getGeneration());
@@ -309,14 +307,13 @@ public class Maze
 	{
 		for(int i = 0; i < quantity; i++)
 			this.spawnPlayer(this.maze_players.size(), 0, MazePlayerType.AI);
-		System.out.println("First strategy: " + ((MazeAIPlayer)this.maze_players.get(this.maze_players.size() - quantity)).getStrategy());
 	}
 	
 	private void createNextGenome(JComponent repainter)
 	{
 		this.deleteAIPlayers();
 		repainter.repaint();
-		this.createAIPlayers(5);
+		this.createAIPlayers(this.neural_evolution.getPopulationSize());
 	}
 	
 	public void onPlayerReachExit(MazePlayer player)

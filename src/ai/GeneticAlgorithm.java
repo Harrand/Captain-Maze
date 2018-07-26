@@ -8,19 +8,26 @@ import utility.MoveDirection;
 
 public class GeneticAlgorithm
 {
+	private int population_size;
 	private MoveStrategy guaranteed_strategy;
 	private float guaranteed_fitness;
 	private int generation_id;
-	private float last_generation_fitness_improvement;
+	private int no_fitness_counter;
 	private Map<Float, MoveStrategy> scored_species;
 	
-	public GeneticAlgorithm()
+	public GeneticAlgorithm(int population_size)
 	{
+		this.population_size = population_size;
 		this.guaranteed_strategy = new MoveStrategy(new ArrayList<MoveDirection>());
 		this.guaranteed_fitness = -1;
 		this.generation_id = 0;
-		this.last_generation_fitness_improvement = 0.0f;
+		this.no_fitness_counter = 0;
 		this.scored_species = new HashMap<Float, MoveStrategy>();
+	}
+	
+	public final MoveStrategy getBaseStrategy()
+	{
+		return this.guaranteed_strategy;
 	}
 	
 	public final float getGuaranteedFitness()
@@ -28,24 +35,20 @@ public class GeneticAlgorithm
 		return this.guaranteed_fitness;
 	}
 	
+	public final int getPopulationSize()
+	{
+		return this.population_size;
+	}
+	
 	public final MoveStrategy getNewStrategy()
 	{
 		MoveStrategy new_strategy = new MoveStrategy(this.guaranteed_strategy);
-		if(new_strategy.size() == 0)
-		{
-			new_strategy.addMove(MoveDirection.Random());
-			return new_strategy;
-		}
 		int i = 0;
 		do
 		{
-			MoveDirection previous = new_strategy.top();
-			MoveDirection next = MoveDirection.Random();
-			if(MoveDirection.get(next.unit().minus()).equals(previous));
-				next = MoveDirection.get(next.unit().minus());
-			new_strategy.addMove(next);
+			new_strategy.addMove(MoveDirection.Random());
 			i++;
-		}while(i < this.generation_id / 10);
+		}while(i < (this.no_fitness_counter / 4) + 1);
 		return new_strategy;
 	}
 	
@@ -71,12 +74,16 @@ public class GeneticAlgorithm
 			if(best_species_fitness > this.guaranteed_fitness)
 			{
 				this.guaranteed_strategy = best_species;
-				this.last_generation_fitness_improvement = best_species_fitness - this.guaranteed_fitness;
 				this.guaranteed_fitness = best_species_fitness;
+				this.no_fitness_counter = 0;
 			}
+			else
+				this.no_fitness_counter++;
 		}
 		this.scored_species.clear();
 		this.generation_id++;
 		System.out.println("Generation " + this.generation_id + ", best fitness = " + this.guaranteed_fitness);
+		System.out.println("Strategy: " + this.guaranteed_strategy);
+		System.out.println("No-fitness Counter = " + this.no_fitness_counter);
 	}
 }

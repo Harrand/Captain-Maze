@@ -1,5 +1,6 @@
 package maze;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import javax.swing.JComponent;
@@ -24,7 +25,8 @@ public class MazePlayer extends MazeObject
 		Collection<MazeObject> objects = maze.at(after);
 		if(objects == null || objects.isEmpty())
 			return true;
-		for(MazeObject objects_at : maze.at(after))
+		Collection<MazeObject> objects_copy = new ArrayList<MazeObject>(maze.at(after));
+		for(MazeObject objects_at : objects_copy)
 			if(Maze.isWall(objects_at))
 				return false;
 		return true;
@@ -32,7 +34,7 @@ public class MazePlayer extends MazeObject
 	
 	public void moveIfCan(Maze maze, MoveDirection direction, JComponent repainter)
 	{
-		if(this.canMove(maze, direction) && !maze.drawing)
+		if(this.canMove(maze, direction))
 		{
 			Vector2I previous_position = this.position;
 			this.position = this.position.add(direction.unit());
