@@ -48,12 +48,12 @@ public class MazeGame extends JPanel implements KeyListener
 	public static void main(String[] args)
 	{
 		//new MazeGame(args[0]);
-		JFrame window = new JFrame("Captain Maze - The AI Maze Solver");
+		JFrame window = new JFrame("Maze Darwinism - Solving by Evolution");
 		int width = 500, height = 500;
 		window.setSize(width, height);
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		window.setVisible(true);
-		MazeGame game = new MazeGame("C:/Users/Harry/eclipse-workspace/Captain Maze/maze2.png", width, height);
+		MazeGame game = new MazeGame("C:/Users/Harry/eclipse-workspace/Maze Darwinism/maze2.png", width, height);
 		window.add(game);
 		window.addKeyListener(game);
 	}
