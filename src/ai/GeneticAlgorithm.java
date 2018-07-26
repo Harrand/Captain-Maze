@@ -40,6 +40,11 @@ public class GeneticAlgorithm
 		return this.population_size;
 	}
 	
+	public final int mutationSize()
+	{
+		return (this.no_fitness_counter / 4) + 1;
+	}
+	
 	public final MoveStrategy getNewStrategy()
 	{
 		MoveStrategy new_strategy = new MoveStrategy(this.guaranteed_strategy);
@@ -48,7 +53,7 @@ public class GeneticAlgorithm
 		{
 			new_strategy.addMove(MoveDirection.Random());
 			i++;
-		}while(i < (this.no_fitness_counter / 4) + 1);
+		}while(i < this.mutationSize());
 		return new_strategy;
 	}
 	
@@ -60,6 +65,11 @@ public class GeneticAlgorithm
 	public void rateStrategy(MoveStrategy strategy, float rating)
 	{
 		this.scored_species.put(rating, strategy);
+	}
+	
+	public boolean lastGenerationImprovement()
+	{
+		return this.no_fitness_counter <= 1;
 	}
 	
 	public void nextGeneration()

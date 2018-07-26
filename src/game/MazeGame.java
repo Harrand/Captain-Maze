@@ -10,6 +10,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import ai.AIUpdateFunctor;
+import ai.GeneticAlgorithm;
 import maze.Maze;
 import maze.MazePlayerType;
 import utility.Vector2I;
@@ -25,13 +26,14 @@ public class MazeGame extends JPanel implements KeyListener
 		this.setSize(width, height);
 		
 		File file = new File(file_path);
-		this.maze = new Maze(file);
+		GeneticAlgorithm captain_clever = new GeneticAlgorithm(50);
+		this.maze = new Maze(file, captain_clever);
 		this.maze.spawnPlayer(0, 0, MazePlayerType.HUMAN);
 		this.maze.spawnPlayer(1, 0, MazePlayerType.AI);
 		this.repaint();
 		
 		Timer timer = new Timer();
-		timer.schedule(new AIUpdateFunctor(this.maze, this), 0, 5);
+		timer.schedule(new AIUpdateFunctor(this.maze, this), 0, 10);
 	}
 	
 	@Override
@@ -51,7 +53,7 @@ public class MazeGame extends JPanel implements KeyListener
 		window.setSize(width, height);
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		window.setVisible(true);
-		MazeGame game = new MazeGame("C:/Users/Harry/eclipse-workspace/Captain Maze/maze.png", width, height);
+		MazeGame game = new MazeGame("C:/Users/Harry/eclipse-workspace/Captain Maze/maze2.png", width, height);
 		window.add(game);
 		window.addKeyListener(game);
 	}

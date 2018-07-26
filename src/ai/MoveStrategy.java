@@ -26,10 +26,11 @@ public class MoveStrategy
 		this.move_index = 0;
 	}
 	
-	public static MoveStrategy emptyRandom()
+	public static MoveStrategy random(int length)
 	{
 		MoveStrategy moves = new MoveStrategy(new ArrayList<MoveDirection>());
-		moves.addMove(MoveDirection.Random());
+		for(int i = 0; i < length; i++)
+			moves.addMove(MoveDirection.Random());
 		return moves;
 	}
 	
@@ -85,6 +86,11 @@ public class MoveStrategy
 		{
 		this.moves.remove(this.moves.toArray()[--this.move_index]);
 		}catch(Exception e) {}
+	}
+	
+	public void replaceThis(MoveDirection with)
+	{
+		this.moves.toArray()[this.move_index - 1] = with;
 	}
 	
 	public MoveStrategy concat(MoveStrategy suffix)

@@ -15,6 +15,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 
 import ai.MazeAIPlayer;
+import ai.MoveStrategy;
 import ai.GeneticAlgorithm;
 import utility.ColourConsts;
 import utility.MoveDirection;
@@ -30,7 +31,7 @@ public class Maze
 	private List<MazePlayer> maze_players;
 	private GeneticAlgorithm neural_evolution;
 	
-	public Maze(File maze_image_file)
+	public Maze(File maze_image_file, GeneticAlgorithm ai)
 	{
 		try
 		{
@@ -48,7 +49,7 @@ public class Maze
 		
 		int[][] pixels = this.updatePixelData();
 		this.populateMazeMap(pixels);
-		this.neural_evolution = new GeneticAlgorithm(2500);
+		this.neural_evolution = ai;
 	}
 	
 	public int getWidth()
@@ -187,7 +188,8 @@ public class Maze
 		{
 			Collection<MazeObject> objects_copy = new ArrayList<MazeObject>(objects);
 			for(MazeObject object : objects_copy)
-				object.draw(texel_size.x, texel_size.y, gl);
+				if(object != null)
+					object.draw(texel_size.x, texel_size.y, gl);
 		}
 	}
 	
@@ -200,13 +202,14 @@ public class Maze
 			new_player = new MazeHumanPlayer(Vector2I.NAN, this);
 			break;
 		case AI:
-			new_player = new MazeAIPlayer(Vector2I.NAN, this, this.neural_evolution.getNewStrategy());
+			new_player = new MazeAIPlayer(Vector2I.NAN, this, MoveStrategy.random(this.neural_evolution.mutationSize()));
 			break;
 		}
 		// set the new player position.
 		try
 		{
 			new_player.position = this.maze_entrances.get(entrance_id).position;
+			new_player.position = this.neural_evolution.getBaseStrategy().end(new_player.position);
 		}catch(Exception e) {new_player.position = Vector2I.ZERO;}
 		
 		if(this.maze_players.size() <= player_id)
@@ -285,7 +288,7 @@ public class Maze
 		if(!found_exit)
 		{
 			this.maze_players.remove(player);
-			this.neural_evolution.rateStrategy(player.getStrategy(), player.fitness());
+			this.neural_evolution.rateStrategy(this.neural_evolution.getBaseStrategy().concat(player.getStrategy()), player.fitness());
 			repainter.repaint();
 		}
 		else
