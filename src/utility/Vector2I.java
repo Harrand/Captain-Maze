@@ -15,6 +15,12 @@ public class Vector2I
 		this.y = y;
 	}
 	
+	public Vector2I(Vector2I copy)
+	{
+		this.x = copy.x;
+		this.y = copy.y;
+	}
+	
 	public Vector2I add(Vector2I rhs)
 	{
 		return new Vector2I(this.x + rhs.x, this.y + rhs.y);

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import utility.MoveDirection;
+import utility.Vector2I;
 
 public class MoveStrategy
 {
@@ -23,6 +24,13 @@ public class MoveStrategy
 		for(MoveDirection move : copy.moves)
 			this.moves.add(move);
 		this.move_index = 0;
+	}
+	
+	public static MoveStrategy emptyRandom()
+	{
+		MoveStrategy moves = new MoveStrategy(new ArrayList<MoveDirection>());
+		moves.addMove(MoveDirection.Random());
+		return moves;
 	}
 	
 	public void addMove(MoveDirection direction)
@@ -47,6 +55,14 @@ public class MoveStrategy
 		return top;
 	}
 	
+	public Vector2I end(Vector2I begin)
+	{
+		Vector2I pos = new Vector2I(begin);
+		for(MoveDirection direction : this.moves)
+			pos = pos.add(direction.unit());
+		return pos;	
+	}
+	
 	public boolean finished()
 	{
 		return this.move_index >= this.moves.size();
@@ -69,6 +85,14 @@ public class MoveStrategy
 		{
 		this.moves.remove(this.moves.toArray()[--this.move_index]);
 		}catch(Exception e) {}
+	}
+	
+	public MoveStrategy concat(MoveStrategy suffix)
+	{
+		MoveStrategy copy = new MoveStrategy(this);
+		for(MoveDirection direction : suffix.moves)
+			copy.addMove(direction);
+		return copy;
 	}
 	
 	@Override

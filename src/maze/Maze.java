@@ -48,7 +48,7 @@ public class Maze
 		
 		int[][] pixels = this.updatePixelData();
 		this.populateMazeMap(pixels);
-		this.neural_evolution = new GeneticAlgorithm(20);
+		this.neural_evolution = new GeneticAlgorithm(2500);
 	}
 	
 	public int getWidth()
@@ -271,6 +271,7 @@ public class Maze
 		if(ai_players_done)
 		{
 			this.neural_evolution.nextGeneration();
+			System.out.println(this.neural_evolution.getBaseStrategy().end(this.maze_entrances.iterator().next().position));
 			this.createNextGenome(repainter);
 		}
 	}

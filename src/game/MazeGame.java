@@ -51,7 +51,7 @@ public class MazeGame extends JPanel implements KeyListener
 		window.setSize(width, height);
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		window.setVisible(true);
-		MazeGame game = new MazeGame("C:/Users/Harry/eclipse-workspace/Captain Maze/maze0.png", width, height);
+		MazeGame game = new MazeGame("C:/Users/Harry/eclipse-workspace/Captain Maze/maze.png", width, height);
 		window.add(game);
 		window.addKeyListener(game);
 	}
